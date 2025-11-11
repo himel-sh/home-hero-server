@@ -45,6 +45,20 @@ async function run() {
       }
     });
 
+    app.post("/testimonials", async (req, res) => {
+      const newTestimonial = req.body;
+      const result = await db
+        .collection("testimonials")
+        .insertOne(newTestimonial);
+      res.send(result);
+    });
+
+    app.get("/testimonials", async (req, res) => {
+      const cursor = db.collection("testimonials").find();
+      const testimonials = await cursor.toArray();
+      res.send(testimonials);
+    });
+
     app.post("/services", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
