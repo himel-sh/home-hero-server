@@ -84,7 +84,10 @@ async function run() {
             .send({ message: "Booking not found or already deleted" });
         }
 
-        res.send({ message: "Booking deleted successfully" });
+        res.send({
+          deletedCount: result.deletedCount,
+          message: "Booking deleted successfully",
+        });
       } catch (err) {
         console.error(err);
         res.status(500).send({ error: "Failed to delete booking" });
@@ -130,6 +133,7 @@ async function run() {
     // Create a new service
     app.post("/services", async (req, res) => {
       const service = req.body;
+      service.email = service.email.trim().toLowerCase();
       const result = await serviceCollection.insertOne(service);
       res.send(result);
     });
@@ -149,7 +153,7 @@ async function run() {
         const services = await serviceCollection
           .find({})
           .sort({ _id: 1 })
-          .limit(6)
+
           .toArray();
         res.send(services);
       } catch (err) {
@@ -180,6 +184,7 @@ async function run() {
     });
 
     // Update a service (only by owner)
+    // Update a service (with ownership check)
     app.patch("/services/:id", async (req, res) => {
       const id = req.params.id;
       const { email: authEmail, ...fieldsToUpdate } = req.body;
@@ -189,21 +194,38 @@ async function run() {
       }
 
       try {
-        // Find by ID only (email check optional)
-        const result = await serviceCollection.findOneAndUpdate(
-          { _id: new ObjectId(id) },
-          { $set: fieldsToUpdate },
-          { returnDocument: "after" }
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({ message: "Invalid service ID" });
+        }
+        const objectId = new ObjectId(id);
+
+        const normalizedEmail = authEmail.trim().toLowerCase();
+
+        const existsDebug = await serviceCollection.findOne({ _id: objectId });
+        console.log("EXISTS DEBUG:", existsDebug);
+
+        const updateResult = await serviceCollection.updateOne(
+          { _id: objectId, email: normalizedEmail },
+          { $set: fieldsToUpdate }
         );
 
-        if (!result.value) {
-          return res.status(404).json({ message: "Service not found" });
+        console.log("UPDATE RESULT:", updateResult);
+
+        if (updateResult.matchedCount === 0) {
+          const exists = await serviceCollection.findOne({ _id: objectId });
+          if (exists) {
+            return res
+              .status(403)
+              .json({ message: "You are not allowed to update this service" });
+          } else {
+            return res.status(404).json({ message: "Service not found" });
+          }
         }
 
-        const updatedService = {
-          ...result.value,
-          _id: result.value._id.toString(),
-        };
+        const updatedService = await serviceCollection.findOne({
+          _id: objectId,
+        });
+        updatedService._id = updatedService._id.toString();
 
         res.json(updatedService);
       } catch (err) {
