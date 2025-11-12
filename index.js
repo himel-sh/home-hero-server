@@ -178,14 +178,24 @@ async function run() {
       res.send(service);
     });
 
-    // Get all services (limited to first 6)
+    // Get all services with optional price filtering
     app.get("/services", async (req, res) => {
       try {
-        const services = await serviceCollection
-          .find({})
-          .sort({ _id: 1 })
+        const { minPrice, maxPrice } = req.query;
+        let filter = {};
 
+        // Filter by price using $gte and $lte
+        if (minPrice || maxPrice) {
+          filter.price = {};
+          if (minPrice) filter.price.$gte = Number(minPrice);
+          if (maxPrice) filter.price.$lte = Number(maxPrice);
+        }
+
+        const services = await serviceCollection
+          .find(filter)
+          .sort({ _id: 1 }) // optional: sort by creation order
           .toArray();
+
         res.send(services);
       } catch (err) {
         console.error(err);
