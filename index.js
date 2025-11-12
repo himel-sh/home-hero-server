@@ -172,14 +172,17 @@ async function run() {
     });
 
     app.get("/services", async (req, res) => {
-      const email = req.query.email;
-      const query = {};
-      if (email) {
-        query.email = email;
+      try {
+        const services = await serviceCollection
+          .find({})
+          .sort({ _id: 1 }) // or -1 for newest first
+          .limit(6) // only first 6 documents
+          .toArray();
+        res.send(services);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ error: "Failed to fetch services" });
       }
-      const cursor = serviceCollection.find(query);
-      const services = await cursor.toArray();
-      res.send(services);
     });
 
     await client.db("admin").command({ ping: 1 });
