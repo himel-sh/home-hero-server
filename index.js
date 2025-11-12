@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -30,6 +30,13 @@ async function run() {
     const db = client.db("home_hero_db");
     const serviceCollection = db.collection("services");
     const usersCollection = db.collection("users");
+    const bookingsCollection = db.collection("bookings");
+
+    app.post("/bookings", async (req, res) => {
+      const newBooking = req.body;
+      const result = await bookingsCollection.insertOne(newBooking);
+      res.send(result);
+    });
 
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -43,6 +50,29 @@ async function run() {
         const result = await usersCollection.insertOne(newUser);
         res.send(result);
       }
+    });
+
+    app.get("/bookings", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const cursor = db.collection("bookings").find(query);
+      const bookings = await cursor.toArray();
+      res.send(bookings);
+    });
+
+    app.get("/bookings/check", async (req, res) => {
+      const { userEmail, serviceId } = req.query;
+
+      if (!userEmail || !serviceId) {
+        return res
+          .status(400)
+          .send({ message: "Missing userEmail or serviceId" });
+      }
+
+      const query = { userEmail, serviceId };
+      const existingBooking = await bookingsCollection.findOne(query);
+
+      res.send({ booked: !!existingBooking });
     });
 
     app.post("/testimonials", async (req, res) => {
@@ -63,6 +93,13 @@ async function run() {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
       res.send(result);
+    });
+
+    app.get("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const service = await serviceCollection.findOne(query);
+      res.send(service);
     });
 
     app.get("/services", async (req, res) => {
