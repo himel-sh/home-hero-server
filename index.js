@@ -50,6 +50,37 @@ async function run() {
       res.send(result);
     });
 
+    // Get user by email
+    app.get("/users/email/:email", async (req, res) => {
+      const email = req.params.email;
+      try {
+        const user = await usersCollection.findOne({ email });
+        if (!user) return res.status(404).send({ message: "User not found" });
+        res.send(user);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to fetch user" });
+      }
+    });
+
+    // Update user by email
+    app.patch("/users/email/:email", async (req, res) => {
+      const email = req.params.email;
+      const updateData = req.body;
+      try {
+        const result = await usersCollection.updateOne(
+          { email },
+          { $set: updateData }
+        );
+        if (result.matchedCount === 0)
+          return res.status(404).send({ message: "User not found" });
+
+        const updatedUser = await usersCollection.findOne({ email });
+        res.send(updatedUser);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to update user" });
+      }
+    });
+
     // ---------------------
     // Bookings API
     // ---------------------
