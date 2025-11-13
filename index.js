@@ -7,8 +7,32 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+// Middleware
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://home-hero-client.web.app", // Your client origin
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl) or if the origin is in the allowed list
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    // Explicitly allow all methods used, including PATCH and the preflight OPTIONS
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    // Ensure you allow the Content-Type header (needed for PATCH body) and Authorization (if used)
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+// ...
 
 // MongoDB connection
 
