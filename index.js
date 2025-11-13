@@ -3,29 +3,25 @@ const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
+const app = express();
+const port = process.env.PORT || 3000;
+
 const allowedOrigins = [
-  "http://localhost:5173",
   "https://home-hero-client.web.app",
+  "http://localhost:5173", // for development
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin || "*");
-    res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.header("Access-Control-Allow-Credentials", "true");
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-    if (req.method === "OPTIONS") return res.sendStatus(200);
-    next();
-  } else {
-    res
-      .status(403)
-      .json({ message: `CORS policy: origin ${origin} not allowed` });
-  }
-});
+app.use(cors(corsOptions));
 
-// Body parser
+// Handle preflight requests
+app.options("*", cors(corsOptions));
+// Middleware
 app.use(express.json());
 
 // MongoDB connection
