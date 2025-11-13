@@ -7,28 +7,27 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
-  "https://home-hero-client.web.app",
   "http://localhost:5173",
+  "https://home-hero-client.web.app",
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PATCH, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (like curl or server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `CORS policy: origin ${origin} not allowed`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-  // Handle preflight request
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-
-  next();
-});
-
-// Middleware
+// Body parser
 app.use(express.json());
 
 // MongoDB connection
