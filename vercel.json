@@ -27,11 +27,10 @@
       ]
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "index.js",
-      "methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+      "source": "/(.*)",
+      "destination": "/index.js"
     }
   ]
 }
