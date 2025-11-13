@@ -11,13 +11,16 @@ const allowedOrigins = [
   "http://localhost:5173", // for development
 ];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PATCH", "DELETE"],
-  })
-);
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options("*", cors(corsOptions));
 // Middleware
 app.use(express.json());
 
