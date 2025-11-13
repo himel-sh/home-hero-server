@@ -65,19 +65,22 @@ async function run() {
 
     // Update user by email
     app.patch("/users/email/:email", async (req, res) => {
-      const email = req.params.email;
-      const updateData = req.body;
       try {
+        const email = req.params.email.toLowerCase(); // normalize
+        const updateData = req.body;
+
         const result = await usersCollection.updateOne(
           { email },
           { $set: updateData }
         );
+
         if (result.matchedCount === 0)
           return res.status(404).send({ message: "User not found" });
 
         const updatedUser = await usersCollection.findOne({ email });
         res.send(updatedUser);
       } catch (err) {
+        console.error("Update user failed:", err);
         res.status(500).send({ error: "Failed to update user" });
       }
     });
