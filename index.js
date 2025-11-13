@@ -8,9 +8,9 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "https://home-hero-client.web.app",
-  "http://localhost:5173", // for development
+  "http://localhost:5173",
 ];
-// General CORS middleware
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -21,10 +21,13 @@ app.use((req, res, next) => {
     "GET, POST, PATCH, DELETE, OPTIONS"
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  // handle preflight request
+
+  // Handle preflight request
   if (req.method === "OPTIONS") return res.sendStatus(200);
+
   next();
 });
+
 // Middleware
 app.use(express.json());
 
