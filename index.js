@@ -11,21 +11,29 @@ const allowedOrigins = [
   "https://home-hero-client.web.app",
 ];
 
+// Use CORS middleware
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like curl or server-to-server)
+      // allow requests with no origin (like curl, Postman, or server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = `CORS policy: origin ${origin} not allowed`;
-        return callback(new Error(msg), false);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(
+          new Error(`CORS policy: origin ${origin} not allowed`),
+          false
+        );
       }
-      return callback(null, true);
     },
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // if you need cookies or auth headers
   })
 );
+
+// Handle preflight requests for all routes
+app.options("*", cors());
 
 // Body parser
 app.use(express.json());
