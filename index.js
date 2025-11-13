@@ -10,17 +10,21 @@ const allowedOrigins = [
   "https://home-hero-client.web.app",
   "http://localhost:5173", // for development
 ];
-
-const corsOptions = {
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options("*", cors(corsOptions));
+// General CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PATCH, DELETE, OPTIONS"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  // handle preflight request
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 // Middleware
 app.use(express.json());
 
