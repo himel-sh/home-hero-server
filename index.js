@@ -8,7 +8,6 @@ const allowedOrigins = [
   "https://home-hero-client.web.app",
 ];
 
-// CORS middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (!origin || allowedOrigins.includes(origin)) {
@@ -16,12 +15,13 @@ app.use((req, res, next) => {
     res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.header("Access-Control-Allow-Credentials", "true");
-    if (req.method === "OPTIONS") return res.sendStatus(200); // preflight
+
+    if (req.method === "OPTIONS") return res.sendStatus(200);
     next();
   } else {
     res
       .status(403)
-      .send({ message: `CORS policy: origin ${origin} not allowed` });
+      .json({ message: `CORS policy: origin ${origin} not allowed` });
   }
 });
 
