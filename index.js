@@ -6,8 +6,19 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
+const allowedOrigins = [
+  "https://home-hero-client.web.app",
+  "http://localhost:5173", // for development
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+  })
+);
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 
 // MongoDB connection
