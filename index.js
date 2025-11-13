@@ -90,6 +90,31 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/services/:id/reviews", async (req, res) => {
+      const { id } = req.params;
+      const { review } = req.body;
+
+      if (!review || !review.userEmail || !review.rating) {
+        return res.status(400).send({ message: "Invalid review data" });
+      }
+
+      try {
+        const result = await serviceCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $push: { reviews: review } }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ message: "Service not found" });
+        }
+
+        res.send({ message: "Review added successfully" });
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Failed to add review" });
+      }
+    });
+
     app.get("/bookings", async (req, res) => {
       const email = req.query.email;
       const query = email ? { userEmail: email } : {};
@@ -161,7 +186,6 @@ async function run() {
     // Services API
     // ---------------------
 
-    // Create a new service
     app.post("/services", async (req, res) => {
       const service = req.body;
       service.email = service.email.trim().toLowerCase();
@@ -169,7 +193,6 @@ async function run() {
       res.send(result);
     });
 
-    // Get a single service by ID
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
       const service = await serviceCollection.findOne({
@@ -178,7 +201,6 @@ async function run() {
       res.send(service);
     });
 
-    // Get all services with optional price filtering
     app.get("/services", async (req, res) => {
       try {
         const { minPrice, maxPrice } = req.query;
@@ -193,7 +215,7 @@ async function run() {
 
         const services = await serviceCollection
           .find(filter)
-          .sort({ _id: 1 }) // optional: sort by creation order
+          .sort({ _id: 1 })
           .toArray();
 
         res.send(services);
