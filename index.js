@@ -3,37 +3,27 @@ const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
-const app = express();
-const port = process.env.PORT || 3000;
-
 const allowedOrigins = [
   "http://localhost:5173",
   "https://home-hero-client.web.app",
 ];
 
-// Use CORS middleware
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (like curl, Postman, or server-to-server)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(
-          new Error(`CORS policy: origin ${origin} not allowed`),
-          false
-        );
-      }
-    },
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // if you need cookies or auth headers
-  })
-);
-
-// Handle preflight requests for all routes
-app.options("*", cors());
+// CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.header("Access-Control-Allow-Credentials", "true");
+    if (req.method === "OPTIONS") return res.sendStatus(200); // preflight
+    next();
+  } else {
+    res
+      .status(403)
+      .send({ message: `CORS policy: origin ${origin} not allowed` });
+  }
+});
 
 // Body parser
 app.use(express.json());
