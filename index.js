@@ -7,25 +7,21 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-// Middleware
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://home-hero-client.web.app", // Your client origin
+  "https://home-hero-client.web.app",
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl) or if the origin is in the allowed list
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
-    // Explicitly allow all methods used, including PATCH and the preflight OPTIONS
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    // Ensure you allow the Content-Type header (needed for PATCH body) and Authorization (if used)
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
@@ -52,7 +48,7 @@ app.get("/", (req, res) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const db = client.db("home_hero_db");
     const serviceCollection = db.collection("services");
@@ -70,6 +66,10 @@ async function run() {
       if (existingUser) {
         return res.send({ message: "User already exists" });
       }
+
+      // Set default role to 'user' if not provided
+      newUser.role = newUser.role || "user";
+      newUser.createdAt = new Date();
 
       const result = await usersCollection.insertOne(newUser);
       res.send(result);
@@ -103,6 +103,50 @@ async function run() {
         res.send(updatedUser);
       } catch (err) {
         res.status(500).send({ error: "Failed to update user" });
+      }
+    });
+
+    // Get all users (admin only)
+    app.get("/users", async (req, res) => {
+      const adminEmail = req.query.adminEmail;
+      try {
+        const admin = await usersCollection.findOne({ email: adminEmail });
+        if (!admin || admin.role !== "admin") {
+          return res.status(403).send({ message: "Unauthorized" });
+        }
+
+        const users = await usersCollection.find().toArray();
+        res.send(users);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to fetch users" });
+      }
+    });
+
+    // Update user role (admin only)
+    app.patch("/users/:id/role", async (req, res) => {
+      const userId = req.params.id;
+      const { role, adminEmail } = req.body;
+
+      try {
+        const admin = await usersCollection.findOne({ email: adminEmail });
+        if (!admin || admin.role !== "admin") {
+          return res.status(403).send({ message: "Unauthorized" });
+        }
+
+        const result = await usersCollection.updateOne(
+          { _id: new ObjectId(userId) },
+          { $set: { role } }
+        );
+
+        if (result.matchedCount === 0)
+          return res.status(404).send({ message: "User not found" });
+
+        const updatedUser = await usersCollection.findOne({
+          _id: new ObjectId(userId),
+        });
+        res.send(updatedUser);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to update user role" });
       }
     });
 
